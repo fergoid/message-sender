@@ -21,6 +21,7 @@ public class MessageSenderController {
 
     @Value("${my.exchange}")
     private String exchangeName;
+
     @RequestMapping(path = "/fergoid/send/{message}", method = RequestMethod.PUT)
     public ResponseEntity<Void> sendMessage(@PathVariable String message) {
         System.out.println("I will publish " + message);
@@ -31,4 +32,6 @@ public class MessageSenderController {
         return new ResponseEntity<>(HttpStatus.OK);
 
     }
+
+
 }

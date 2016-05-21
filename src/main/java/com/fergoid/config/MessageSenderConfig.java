@@ -37,18 +37,17 @@ import java.util.concurrent.ThreadPoolExecutor;
 public class MessageSenderConfig {
 
     @Value("${my.other.exchange}")
+    private String otherExchange;
+
+    @Value("${my.exchange}")
     private String exchange;
 
     @Value("${my.topic}")
     private String topic;
 
-    @Autowired
-    private AmqpAdmin amqpAdmin;
-
     @Bean
     TopicExchange exchange() {
         TopicExchange topex = new TopicExchange(exchange);
-        amqpAdmin.declareExchange(topex);
         return topex;
     }
 
@@ -77,7 +76,7 @@ public class MessageSenderConfig {
     AmqpOutboundEndpoint amqpOutboundEndpoint(AmqpTemplate amqpTemplate) {
         AmqpOutboundEndpoint amqpOutboundEndpoint = new AmqpOutboundEndpoint(amqpTemplate);
         amqpOutboundEndpoint.setRoutingKey(topic);
-        amqpOutboundEndpoint.setExchangeName(exchange);
+        amqpOutboundEndpoint.setExchangeName(otherExchange);
         return amqpOutboundEndpoint;
     }
 

@@ -1,14 +1,19 @@
 package com.fergoid.controller;
 
 import com.fergoid.messaging.MyGateway;
+import org.springframework.amqp.core.*;
+import org.springframework.amqp.rabbit.core.RabbitManagementTemplate;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import javax.annotation.PostConstruct;
 import java.util.logging.Logger;
+import static org.springframework.hateoas.mvc.ControllerLinkBuilder.*;
 
 /**
  * Created by markferguson on 05/05/2016.
@@ -19,10 +24,16 @@ public class MessageSenderController {
     private final static Logger log = Logger.getLogger("MessageSenderController");
 
     @Autowired
-    MyGateway myGateway;
+    private AmqpAdmin amqpAdmin;
 
     @Autowired
-    RabbitTemplate rabbitTemplate;
+    private TopicExchange exchange;
+
+    @Autowired
+    private MyGateway myGateway;
+
+    @Autowired
+    private RabbitTemplate rabbitTemplate;
 
     @Value("${my.topic}")
     private String topic;
@@ -32,19 +43,26 @@ public class MessageSenderController {
 
 
     @RequestMapping(path = "/fergoid/send/{message}", method = RequestMethod.PUT)
-    public ResponseEntity<Void> sendMessage(@PathVariable String message) {
-        log.info("I will publish " + message + " to " +exchangeName);
+    public HttpEntity<Message> sendMessage(@PathVariable String message) {
+        String s = String.format("I will publish %s to %s", message, exchangeName);
+        log.info(s);
         assert(message == null);
+
         // Publish to {exchangeName} with topic {topic}
-        // listener exepects bytes[]
-        rabbitTemplate.convertAndSend(exchangeName, topic, message.getBytes());
-        return new ResponseEntity<>(HttpStatus.OK);
+        // listener expects bytes[]
+        rabbitTemplate.convertAndSend(exchangeName, topic, s.getBytes());
+
+        //Build Hypermedia Self Link
+        Message m = new Message(message);
+        m.add(linkTo(methodOn(MessageSenderController.class).sendMessage(message)).withSelfRel());
+
+        return new ResponseEntity<Message>(m, HttpStatus.OK);
     }
 
 
     @RequestMapping(path = "/fergoid/send/integration/{message}", method = RequestMethod.PUT)
     public ResponseEntity<Void> sendMessageOne(@PathVariable String message) {
-        String s = "I will publish integration " + message;
+        String s = String.format("I will publish integration %s", message);
         log.info(s);
         assert(message == null);
         // Publish to {my.other.exchange} with topic {topic}
@@ -53,5 +71,10 @@ public class MessageSenderController {
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
+    @PostConstruct
+    public void setUp() {
+        log.info("Controller Post Contruction");
+        amqpAdmin.declareExchange(exchange);
+    }
 
 }

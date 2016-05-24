@@ -20,7 +20,9 @@ import org.springframework.integration.annotation.Gateway;
 import org.springframework.integration.annotation.IntegrationComponentScan;
 import org.springframework.integration.annotation.MessagingGateway;
 import org.springframework.integration.annotation.ServiceActivator;
+import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.channel.PublishSubscribeChannel;
+import org.springframework.integration.config.EnableIntegration;
 import org.springframework.integration.core.MessagingTemplate;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.validation.annotation.Validated;
@@ -33,6 +35,8 @@ import java.util.concurrent.ThreadPoolExecutor;
 @Configuration
 @ComponentScan(basePackages = "com.fergoid")
 @IntegrationComponentScan(basePackages = "com.fergoid")
+@EnableIntegration
+
 
 public class MessageSenderConfig {
 
@@ -47,32 +51,17 @@ public class MessageSenderConfig {
 
     @Bean
     TopicExchange exchange() {
-        TopicExchange topex = new TopicExchange(exchange);
-        return topex;
+        return new TopicExchange(exchange);
     }
 
 
-    @Bean(name="publishSubscribeChannel")
-    PublishSubscribeChannel publishSubscribeChannel() {
-        PublishSubscribeChannel psc = new PublishSubscribeChannel( threadPoolTaskExecutor());
-        psc.setMinSubscribers(0);
-        return psc;
+    @Bean(name="directChannel")
+    DirectChannel directChannel() {
+        return new DirectChannel();
     }
 
     @Bean
-    ThreadPoolTaskExecutor threadPoolTaskExecutor() {
-        ThreadPoolTaskExecutor ioExec = new ThreadPoolTaskExecutor();
-        ioExec.setCorePoolSize(4);
-        ioExec.setMaxPoolSize(10);
-        ioExec.setQueueCapacity(0);
-        ioExec.setThreadNamePrefix("io-");
-        ioExec.setRejectedExecutionHandler(new ThreadPoolExecutor.AbortPolicy());
-        ioExec.initialize();
-        return ioExec;
-    }
-
-    @Bean
-    @ServiceActivator(inputChannel = "publishSubscribeChannel")
+    @ServiceActivator(inputChannel = "directChannel")
     AmqpOutboundEndpoint amqpOutboundEndpoint(AmqpTemplate amqpTemplate) {
         AmqpOutboundEndpoint amqpOutboundEndpoint = new AmqpOutboundEndpoint(amqpTemplate);
         amqpOutboundEndpoint.setRoutingKey(topic);

@@ -6,7 +6,7 @@ import org.springframework.integration.annotation.MessagingGateway;
 /**
  * Created by markferguson on 21/05/2016.
  */
-@MessagingGateway(defaultRequestChannel = "publishSubscribeChannel")
+@MessagingGateway(defaultRequestChannel = "directChannel")
 public interface MyGateway {
 
     @Gateway(requestChannel = "publishSubscribeChannel")

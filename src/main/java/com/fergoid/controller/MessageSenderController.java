@@ -53,12 +53,12 @@ public class MessageSenderController {
         // listener expects bytes[]
         rabbitTemplate.convertAndSend(exchangeName, topic, s.getBytes());
 
-        return new ResponseEntity<Message>(getMessage(message), HttpStatus.OK);
+        return new ResponseEntity<Message>(getMessage(s, message), HttpStatus.OK);
     }
 
-    private Message getMessage(@PathVariable String message) {
+    private Message getMessage(String displayed,  String message) {
         //Build Hypermedia Self Link
-        Message m = new Message(message);
+        Message m = new Message(displayed);
         m.add(linkTo(methodOn(MessageSenderController.class).sendMessage(message)).withSelfRel());
         return m;
     }
@@ -75,6 +75,17 @@ public class MessageSenderController {
         myGateway.publish(s);
         return new ResponseEntity<>(HttpStatus.OK);
     }
+
+    @RequestMapping(path = "/fergoid/send/flow/{message}", method = RequestMethod.PUT)
+    public ResponseEntity<Void> sendMessageTwo(@PathVariable String message) {
+        String s = String.format("I will publish integration %s", message);
+        log.info(s);
+        assert(message == null);
+        // Publish to {my.other.exchange} with topic {topic}
+        // listener expects bytes[]
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
 
     @PostConstruct
     public void setUp() {

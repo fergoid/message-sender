@@ -41,26 +41,33 @@ public class MessageSenderController {
     @Value("${my.exchange}")
     private String exchangeName;
 
+    private Message myMessage;
 
     // Spring MVC with HATEOAS
     @RequestMapping(path = "/fergoid/send/{message}", method = RequestMethod.PUT)
     public HttpEntity<Message> sendMessage(@PathVariable String message) {
         String s = String.format("I will publish %s to %s", message, exchangeName);
         log.info(s);
+        myMessage = null;
         assert(message == null);
 
         // Publish to {exchangeName} with topic {topic}
         // listener expects bytes[]
         rabbitTemplate.convertAndSend(exchangeName, topic, s.getBytes());
-
-        return new ResponseEntity<Message>(getMessage(s, message), HttpStatus.OK);
+        getMessage(s, "fred", "fred");
+        getMessage(s, message, null);
+        return new ResponseEntity<>(myMessage, HttpStatus.OK);
     }
 
-    private Message getMessage(String displayed,  String message) {
+    private void getMessage(String displayed,  String message, String relName) {
         //Build Hypermedia Self Link
-        Message m = new Message(displayed);
-        m.add(linkTo(methodOn(MessageSenderController.class).sendMessage(message)).withSelfRel());
-        return m;
+        if (myMessage == null)
+            myMessage = new Message(displayed);
+        if (relName == null)
+            myMessage.add(linkTo(methodOn(MessageSenderController.class).sendMessage(message)).withSelfRel());
+        else
+            myMessage.add(linkTo(methodOn(MessageSenderController.class).sendMessage(message)).withRel(relName));
+
     }
 
 

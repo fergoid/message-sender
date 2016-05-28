@@ -9,7 +9,7 @@ import org.springframework.integration.annotation.MessagingGateway;
 @MessagingGateway(defaultRequestChannel = "directChannel")
 public interface MyGateway {
 
-    @Gateway(requestChannel = "publishSubscribeChannel")
+    @Gateway(requestChannel = "directChannel")
     void publish(String data);
 }
 
